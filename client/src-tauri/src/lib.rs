@@ -153,7 +153,17 @@ pub fn run() {
         .setup(|app| {
             let _ = dotenvy::dotenv();
             app.handle()
-                .plugin(tauri_plugin_updater::Builder::new().build())?;
+                .plugin(tauri_plugin_log::Builder::new()
+                    .target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::LogDir {
+                            file_name: Some("nightingale".to_string()),
+                        },
+                    ))
+                    .target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::Stdout,
+                    ))
+                    .level(log::LevelFilter::Info)
+                    .build())?;
             app_core::startup()?;
             app_core::media_server::start();
             let media_endpoint = app_core::media_server::endpoint();
