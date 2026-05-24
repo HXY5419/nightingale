@@ -14,6 +14,67 @@ use crate::{
     vendor_scripts,
 };
 
+// ─── Manual Mode Configuration ───────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ManualVendorConfig {
+    pub enabled: bool,
+    /// Custom path to ffmpeg binary. None means use vendor-downloaded ffmpeg.
+    pub ffmpeg_path: Option<String>,
+    /// Custom path to Python 3.10 binary. None means use vendor-installed Python.
+    pub python_path: Option<String>,
+    /// CUDA variant: "cpu", "cu126", or "cu128". None means auto-detect.
+    pub cuda_version: Option<String>,
+    /// Skip video background pre-download during setup.
+    pub skip_videos: bool,
+}
+
+impl Default for ManualVendorConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            ffmpeg_path: None,
+            python_path: None,
+            cuda_version: None,
+            skip_videos: false,
+        }
+    }
+}
+
+fn manual_config_path() -> PathBuf {
+    vendor_dir().join("manual_config.json")
+}
+
+pub fn load_manual_config() -> ManualVendorConfig {
+    let path = manual_config_path();
+    if path.is_file() {
+        std::fs::read_to_string(&path)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default()
+    } else {
+        ManualVendorConfig::default()
+    }
+}
+
+pub fn save_manual_config(config: &ManualVendorConfig) -> Result<(), String> {
+    let path = manual_config_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create vendor directory: {e}"))?;
+    }
+    let json = serde_json::to_string_pretty(config)
+        .map_err(|e| format!("Failed to serialize manual config: {e}"))?;
+    std::fs::write(&path, json)
+        .map_err(|e| format!("Failed to write manual config: {e}"))
+}
+
+pub fn is_manual_mode() -> bool {
+    let config = load_manual_config();
+    config.enabled
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "lowercase")]
@@ -89,6 +150,12 @@ fn ready_marker() -> PathBuf {
 }
 
 pub fn is_ready() -> bool {
+    // Manual mode check
+    if is_manual_mode() {
+        let config = load_manual_config();
+        return config.enabled && validate_manual_setup_no_log(&config).is_ok();
+    }
+
     ready_marker().is_file()
         && ffmpeg_path().is_file()
         && python_path().is_file()
@@ -718,4 +785,109 @@ pub fn refresh_analyzer_scripts_if_ready() -> Result<(), String> {
 
 pub fn mark_ready() -> Result<(), String> {
     std::fs::write(ready_marker(), "ok").map_err(|e| format!("Failed to mark ready: {e}"))
+}
+
+// ─── Manual Mode Validation & Completion ────────────────────────────
+
+/// Validate that the provided manual paths actually exist and are usable.
+/// Returns a list of warnings (non-fatal issues) alongside any fatal error.
+pub fn validate_manual_setup(config: &ManualVendorConfig) -> Result<Vec<String>, String> {
+    let mut warnings: Vec<String> = Vec::new();
+
+    if !config.enabled {
+        return Err("Manual mode is not enabled".to_string());
+    }
+
+    // Validate ffmpeg path
+    if let Some(ref path) = config.ffmpeg_path {
+        let p = Path::new(path);
+        if !p.is_file() {
+            return Err(format!("ffmpeg not found at: {path}"));
+        }
+        // Quick exec check
+        let output = silent_command(p)
+            .arg("-version")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .map_err(|e| format!("Cannot execute ffmpeg at {path}: {e}"))?;
+        if !output.success() {
+            return Err(format!("ffmpeg at {path} did not exit successfully"));
+        }
+    } else {
+        warnings.push("No ffmpeg path provided; the app may not function correctly without audio processing".to_string());
+    }
+
+    // Validate python path
+    if let Some(ref path) = config.python_path {
+        let p = Path::new(path);
+        if !p.is_file() {
+            return Err(format!("Python not found at: {path}"));
+        }
+        let output = silent_command(p)
+            .arg("--version")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .map_err(|e| format!("Cannot execute Python at {path}: {e}"))?;
+        if !output.success() {
+            return Err(format!("Python at {path} did not exit successfully"));
+        }
+    } else {
+        warnings.push("No Python path provided; the analyzer will not work without Python 3.10".to_string());
+    }
+
+    // Validate CUDA version selection (just a sanity check)
+    if let Some(ref cuda) = config.cuda_version {
+        match cuda.as_str() {
+            "cpu" | "cu126" | "cu128" => {}
+            _ => {
+                return Err(format!(
+                    "Invalid CUDA version '{cuda}'. Valid options: cpu, cu126, cu128"
+                ));
+            }
+        }
+    }
+
+    Ok(warnings)
+}
+
+fn validate_manual_setup_no_log(config: &ManualVendorConfig) -> Result<(), String> {
+    validate_manual_setup(config).map(|_| ())
+}
+
+/// Complete the manual setup process:
+/// 1. Save the manual config
+/// 2. Extract analyzer scripts into vendor dir
+/// 3. Create vendor dir structure
+/// 4. Mark as ready
+pub fn complete_manual_setup(config: &ManualVendorConfig) -> Result<Vec<String>, String> {
+    let warnings = validate_manual_setup(config)?;
+
+    // Save manual config first
+    save_manual_config(config)?;
+
+    // Ensure vendor directory exists
+    let vdir = vendor_dir();
+    std::fs::create_dir_all(&vdir)
+        .map_err(|e| format!("Failed to create vendor directory: {e}"))?;
+    std::fs::create_dir_all(&analyzer_dir())
+        .map_err(|e| format!("Failed to create analyzer directory: {e}"))?;
+
+    // Extract analyzer scripts
+    vendor_scripts::write_scripts(&analyzer_dir())
+        .map_err(|e| format!("Failed to write analyzer scripts: {e}"))?;
+
+    // Mark as ready
+    mark_ready()?;
+
+    Ok(warnings)
+}
+
+/// Enter manual mode by saving the config and completing setup.
+/// This is a convenience wrapper for the frontend.
+pub fn enter_manual_mode(config: ManualVendorConfig) -> Result<Vec<String>, String> {
+    let mut cfg = config;
+    cfg.enabled = true;
+    complete_manual_setup(&cfg)
 }

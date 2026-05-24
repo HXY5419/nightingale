@@ -56,10 +56,11 @@ pub use profile::ProfileStore;
 pub use scanner::start_scan;
 pub use song::SongOrigin;
 pub use vendor::{
-    SetupProgress, SetupStep, clear_vendor_dir, is_ready, mark_ready,
-    refresh_analyzer_scripts_if_ready, resolve_data_path_input, run_vendor_setup, step_create_venv,
-    step_download_ffmpeg, step_download_uv, step_extract_scripts, step_install_packages,
-    step_install_python,
+    ManualVendorConfig, SetupProgress, SetupStep, clear_vendor_dir, complete_manual_setup,
+    enter_manual_mode, is_manual_mode, is_ready, load_manual_config, mark_ready,
+    refresh_analyzer_scripts_if_ready, resolve_data_path_input, run_vendor_setup,
+    save_manual_config, step_create_venv, step_download_ffmpeg, step_download_uv,
+    step_extract_scripts, step_install_packages, step_install_python, validate_manual_setup,
 };
 
 pub fn startup() -> Result<(), String> {
