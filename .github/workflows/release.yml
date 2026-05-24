@@ -128,9 +128,13 @@ jobs:
       - id: notes
         if: matrix.updater
         name: Load release notes for updater JSON
+        shell: pwsh
         run: |
           $body = Get-Content -Path release_notes.md -Raw
-          "body=$body" >> "$env:GITHUB_OUTPUT"
+          $delimiter = "RELEASE_NOTES_EOF"
+          "body<<$delimiter" >> $env:GITHUB_OUTPUT
+          $body >> $env:GITHUB_OUTPUT
+          "$delimiter" >> $env:GITHUB_OUTPUT
 
       - name: Build, bundle, and upload artifacts
         uses: tauri-apps/tauri-action@v0
