@@ -518,6 +518,8 @@ export const Setup = () => {
         );
       case "error":
         return () => <ErrorStep error={action} onExit={handleExit} />;
+      default:
+        return () => null;
     }
   }, [
     step,
