@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 0.7.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -18,17 +24,23 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
       release_id: ${{ steps.draft.outputs.id }}
     steps:
       - uses: actions/checkout@v4
 
       - id: meta
-        name: Resolve version from tag
+        name: Resolve version
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Tag $GITHUB_REF_NAME -> version $VERSION"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building version $VERSION"
 
       - name: Verify version is consistent across manifests
         shell: bash
@@ -64,8 +76,8 @@ jobs:
         name: Create draft release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: ${{ needs.prepare.outputs.tag }}
           body_path: release_notes.md
           draft: true
           prerelease: false
