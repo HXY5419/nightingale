@@ -1,4 +1,10 @@
-import { onSetupError, onSetupProgress, triggerSetup } from "@/bridge/setup";
+import {
+  completeManualSetup,
+  onSetupError,
+  onSetupProgress,
+  triggerSetup,
+  type ManualVendorConfig,
+} from "@/bridge/setup";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavInput } from "@/hooks/navigation/use-nav-input";
 import {
@@ -19,38 +25,58 @@ import logoSrc from "@/assets/images/logo_square.png";
 import { useShouldRunSetup } from "@/hooks/use-should-run-setup";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { selectFolderPath } from "@/bridge/source";
 import { useConfig } from "@/queries/use-config";
 import { ANALYSIS_QUEUE, CONFIG, MENU, SONGS, SONGS_META } from "@/queries/keys";
 import { useQueryClient } from "@tanstack/react-query";
+import { open } from "@tauri-apps/plugin-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { isTauri } from "@/bridge/runtime";
 
 interface ExtendedSetupProgress extends Omit<SetupProgress, "step"> {
-  step: SetupStep | "init" | "error" | "changedatafolder";
+  step: SetupStep | "init" | "manual" | "manualconfig" | "error" | "changedatafolder";
 }
 
+type SetupMode = "auto" | "manual" | null;
+
 type InitialStepProps = {
-  toNextStep: () => void;
+  onSelectAuto: () => void;
+  onSelectManual: () => void;
 };
 
-const InitialStep = ({ toNextStep }: InitialStepProps) => {
+const InitialStep = ({ onSelectAuto, onSelectManual }: InitialStepProps) => {
   return (
     <>
       <AlertDialogHeader>
         <AlertDialogTitle>Welcome to Nightingale!</AlertDialogTitle>
         <AlertDialogDescription>
-          Before you get started, we need to install a few dependencies: <code>ffmpeg</code>,{" "}
-          <code>uv</code>, <code>python 3.10</code>, Python packages, and <code>CUDA</code> wheels
-          (NVIDIA GPUs only).
+          Before you get started, Nightingale needs a few components for AI-powered audio analysis:
+          {" "}<code>ffmpeg</code>, <code>Python 3.10</code>, and several Python packages for
+          {" "}vocal separation, transcription, and key detection.
         </AlertDialogDescription>
-        <AlertDialogDescription>
-          This may take a few minutes.{" "}
-          {EXIT_SUPPORTED ? "You can exit at any time if you'd prefer not to continue." : ""}
+        <AlertDialogDescription className="mt-2">
+          Choose how to set up these dependencies:
         </AlertDialogDescription>
-        <AlertDialogDescription>This only happens once.</AlertDialogDescription>
       </AlertDialogHeader>
-      <AlertDialogFooter>
-        {EXIT_SUPPORTED && <AlertDialogCancel onClick={() => exit()}>Exit</AlertDialogCancel>}
-        <AlertDialogAction onClick={toNextStep}>Continue</AlertDialogAction>
+      <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+        <AlertDialogAction onClick={onSelectAuto} className="w-full">
+          Automatic Setup (Recommended)
+        </AlertDialogAction>
+        <Button variant="outline" onClick={onSelectManual} className="w-full">
+          Manual Setup — I'll provide the dependencies myself
+        </Button>
+        {EXIT_SUPPORTED && (
+          <AlertDialogCancel onClick={() => exit()} className="w-full">
+            Exit
+          </AlertDialogCancel>
+        )}
       </AlertDialogFooter>
     </>
   );
@@ -77,13 +103,9 @@ const ChangeDataFolderStep = ({ onStart, folder, setFolder }: ChangeDataStepProp
           <Button
             variant="outline"
             onClick={async () => {
-              const folder = await selectFolderPath();
-
-              if (!folder) {
-                return;
-              }
-
-              setFolder(folder);
+              const f = await selectFolderPath();
+              if (!f) return;
+              setFolder(f);
             }}
           >
             {folder ? "Change Folder" : "Choose Folder"}
@@ -97,6 +119,145 @@ const ChangeDataFolderStep = ({ onStart, folder, setFolder }: ChangeDataStepProp
     </AlertDialogFooter>
   </>
 );
+
+interface ManualConfigStepProps {
+  config: ManualVendorConfig;
+  onChange: (config: ManualVendorConfig) => void;
+  onBack: () => void;
+  onComplete: () => Promise<void>;
+  validating: boolean;
+}
+
+const ManualConfigStep = ({
+  config,
+  onChange,
+  onBack,
+  onComplete,
+  validating,
+}: ManualConfigStepProps) => {
+  const [error, setError] = useState<string | null>(null);
+
+  const pickFile = async (key: "ffmpeg_path" | "python_path") => {
+    if (!isTauri) {
+      const input = window.prompt(
+        key === "ffmpeg_path" ? "Full path to ffmpeg executable:" : "Full path to Python 3.10 executable:",
+        key === "ffmpeg_path" ? "/usr/bin/ffmpeg" : "/usr/bin/python3.10",
+      );
+      if (!input) return;
+      const trimmed = input.trim();
+      if (trimmed) {
+        onChange({ ...config, [key]: trimmed });
+      }
+      return;
+    }
+    const selected = await open({ multiple: false });
+    if (selected) {
+      onChange({ ...config, [key]: selected });
+    }
+  };
+
+  const handleComplete = async () => {
+    setError(null);
+    try {
+      await onComplete();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  return (
+    <>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Manual Dependency Setup</AlertDialogTitle>
+        <AlertDialogDescription>
+          Provide the paths to your existing installations. All fields are optional, but the
+          analyzer will not work without both ffmpeg and Python 3.10.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <div className="flex flex-col gap-4 px-1">
+        {/* FFmpeg */}
+        <div className="flex flex-col gap-1.5">
+          <Label>FFmpeg</Label>
+          <div className="flex gap-2">
+            <Input
+              value={config.ffmpeg_path ?? ""}
+              placeholder="e.g. /usr/bin/ffmpeg or C:\ffmpeg\bin\ffmpeg.exe"
+              onChange={(e) => onChange({ ...config, ffmpeg_path: e.target.value || null })}
+              className="flex-1"
+            />
+            <Button variant="outline" size="sm" onClick={() => pickFile("ffmpeg_path")}>
+              Browse
+            </Button>
+          </div>
+        </div>
+
+        {/* Python */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Python 3.10</Label>
+          <div className="flex gap-2">
+            <Input
+              value={config.python_path ?? ""}
+              placeholder="e.g. /usr/bin/python3.10 or C:\Python310\python.exe"
+              onChange={(e) => onChange({ ...config, python_path: e.target.value || null })}
+              className="flex-1"
+            />
+            <Button variant="outline" size="sm" onClick={() => pickFile("python_path")}>
+              Browse
+            </Button>
+          </div>
+        </div>
+
+        {/* CUDA Version */}
+        <div className="flex flex-col gap-1.5">
+          <Label>CUDA / GPU Acceleration</Label>
+          <Select
+            value={config.cuda_version ?? ""}
+            onValueChange={(val) =>
+              onChange({ ...config, cuda_version: val || null })
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Auto-detect (default)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Auto-detect (default)</SelectItem>
+              <SelectItem value="cpu">CPU Only (no GPU)</SelectItem>
+              <SelectItem value="cu126">CUDA 12.6 (NVIDIA, compute cap &lt; 10)</SelectItem>
+              <SelectItem value="cu128">CUDA 12.8 (NVIDIA, compute cap ≥ 10)</SelectItem>
+            </SelectContent>
+          </Select>
+          <AlertDialogDescription className="text-xs mt-1">
+            Choose CPU if you don't have an NVIDIA GPU. CUDA 12.6 works on most NVIDIA GPUs; CUDA 12.8 is for RTX 40-series and newer.
+          </AlertDialogDescription>
+        </div>
+
+        {/* Skip videos */}
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="skip-videos"
+            checked={config.skip_videos}
+            onChange={(e) => onChange({ ...config, skip_videos: e.target.checked })}
+            className="size-4 rounded border border-input"
+          />
+          <Label htmlFor="skip-videos">Skip video background pre-download</Label>
+        </div>
+
+        {error && (
+          <AlertDialogDescription className="text-destructive text-xs">
+            {error}
+          </AlertDialogDescription>
+        )}
+      </div>
+      <AlertDialogFooter>
+        <AlertDialogCancel onClick={onBack}>Back</AlertDialogCancel>
+        <AlertDialogAction onClick={handleComplete} disabled={validating}>
+          {validating ? "Validating..." : "Complete Setup"}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </>
+  );
+};
 
 interface LoadStepProps {
   action: string;
@@ -122,9 +283,10 @@ const LoadStep = ({ action, percent }: LoadStepProps) => (
 
 interface ErrorStepProps {
   error: string;
+  onExit?: () => void;
 }
 
-const ErrorStep = ({ error }: ErrorStepProps) => (
+const ErrorStep = ({ error, onExit }: ErrorStepProps) => (
   <>
     <AlertDialogHeader>
       <AlertDialogTitle>Something went wrong</AlertDialogTitle>
@@ -132,9 +294,9 @@ const ErrorStep = ({ error }: ErrorStepProps) => (
         <code>{error}</code>
       </AlertDialogDescription>
     </AlertDialogHeader>
-    {EXIT_SUPPORTED && (
+    {EXIT_SUPPORTED && onExit && (
       <AlertDialogFooter>
-        <AlertDialogAction onClick={() => exit()}>Exit</AlertDialogAction>
+        <AlertDialogAction onClick={onExit}>Exit</AlertDialogAction>
       </AlertDialogFooter>
     )}
   </>
@@ -143,16 +305,28 @@ const ErrorStep = ({ error }: ErrorStepProps) => (
 interface FinalStepProps {
   onFinish: () => void;
   folder?: string;
+  isManual: boolean;
+  warnings?: string[];
 }
 
-const FinalStep = ({ onFinish, folder }: FinalStepProps) => (
+const FinalStep = ({ onFinish, folder, isManual, warnings }: FinalStepProps) => (
   <>
     <AlertDialogHeader>
       <AlertDialogTitle>You're all set!</AlertDialogTitle>
       <AlertDialogDescription>
-        All dependencies have been installed to <code>{folder}/vendor</code>. Nightingale is ready
-        to use.
+        {isManual
+          ? "Your manually-configured dependencies have been registered. Nightingale is ready to use."
+          : `All dependencies have been installed to ${folder}/vendor. Nightingale is ready to use.`}
       </AlertDialogDescription>
+      {warnings && warnings.length > 0 && (
+        <div className="flex flex-col gap-1 mt-2">
+          {warnings.map((w, i) => (
+            <AlertDialogDescription key={i} className="text-yellow-500 text-xs">
+              ⚠ {w}
+            </AlertDialogDescription>
+          ))}
+        </div>
+      )}
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogAction onClick={onFinish}>Get Started</AlertDialogAction>
@@ -166,6 +340,14 @@ const defaultProgress = {
   action: "",
 };
 
+const defaultManualConfig: ManualVendorConfig = {
+  enabled: false,
+  ffmpeg_path: null,
+  python_path: null,
+  cuda_version: null,
+  skip_videos: false,
+};
+
 export const Setup = () => {
   const { data: config } = useConfig();
   const { shouldRunSetup, setShouldRunSetup } = useShouldRunSetup();
@@ -173,6 +355,10 @@ export const Setup = () => {
 
   const [overrideFolder, setOverrideFolder] = useState(config?.data_path);
   const [setupProgress, setSetupProgress] = useState<ExtendedSetupProgress>(defaultProgress);
+  const [setupMode, setSetupMode] = useState<SetupMode>(null);
+  const [manualConfig, setManualConfig] = useState<ManualVendorConfig>(defaultManualConfig);
+  const [manualWarnings, setManualWarnings] = useState<string[]>([]);
+  const [validating, setValidating] = useState(false);
 
   useEffect(() => {
     if (!overrideFolder && config?.data_path) {
@@ -217,35 +403,70 @@ export const Setup = () => {
 
   const { step, percent, action } = setupProgress;
 
+  const handleAutoSetup = useCallback(() => {
+    setSetupMode("auto");
+    setSetupProgress({ ...defaultProgress, step: "changedatafolder" });
+  }, []);
+
+  const handleManualSetup = useCallback(() => {
+    setSetupMode("manual");
+    setSetupProgress({ ...defaultProgress, step: "manualconfig" });
+  }, []);
+
+  const handleCompleteManual = useCallback(async () => {
+    setValidating(true);
+    try {
+      const cfg = { ...manualConfig, enabled: true };
+      const warnings = await completeManualSetup(cfg);
+      setManualWarnings(warnings);
+      await invalidatePostSetupState();
+      setSetupProgress({ step: "finish", percent: 100, action: "Done" });
+    } catch (e) {
+      setSetupProgress({ step: "error", percent: 0, action: String(e) });
+    } finally {
+      setValidating(false);
+    }
+  }, [manualConfig, invalidatePostSetupState]);
+
+  const handleFinish = useCallback(() => {
+    void invalidatePostSetupState();
+    setSetupProgress(defaultProgress);
+    setSetupMode(null);
+    setShouldRunSetup(false);
+  }, [invalidatePostSetupState, setShouldRunSetup]);
+
+  const handleExit = useCallback(() => {
+    if (EXIT_SUPPORTED) exit();
+  }, []);
+
   useNavInput(
     useCallback(
       (navAction) => {
-        if (!shouldRunSetup) {
-          return;
-        }
+        if (!shouldRunSetup) return;
 
         if (navAction.back) {
           if (step === "finish") {
-            setShouldRunSetup(false);
+            handleFinish();
+          } else if (step === "manualconfig") {
+            setSetupProgress(defaultProgress);
+            setSetupMode(null);
           } else if (EXIT_SUPPORTED) {
             exit();
           }
-
           return;
         }
 
         if (navAction.confirm) {
           if (step === "init") {
-            triggerSetup(overrideFolder ?? undefined);
+            handleAutoSetup();
           } else if (step === "finish") {
-            void invalidatePostSetupState();
-            setShouldRunSetup(false);
+            handleFinish();
           } else if (step === "error" && EXIT_SUPPORTED) {
             exit();
           }
         }
       },
-      [invalidatePostSetupState, overrideFolder, setShouldRunSetup, shouldRunSetup, step],
+      [handleAutoSetup, handleFinish, shouldRunSetup, step],
     ),
   );
 
@@ -253,9 +474,7 @@ export const Setup = () => {
     switch (step) {
       case "init":
         return () => (
-          <InitialStep
-            toNextStep={() => setSetupProgress({ ...setupProgress, step: "changedatafolder" })}
-          />
+          <InitialStep onSelectAuto={handleAutoSetup} onSelectManual={handleManualSetup} />
         );
       case "changedatafolder":
         return () => (
@@ -263,6 +482,19 @@ export const Setup = () => {
             folder={overrideFolder ?? undefined}
             setFolder={setOverrideFolder}
             onStart={() => triggerSetup(overrideFolder ?? undefined)}
+          />
+        );
+      case "manualconfig":
+        return () => (
+          <ManualConfigStep
+            config={manualConfig}
+            onChange={setManualConfig}
+            onBack={() => {
+              setSetupProgress(defaultProgress);
+              setSetupMode(null);
+            }}
+            onComplete={handleCompleteManual}
+            validating={validating}
           />
         );
       case "clearvendor":
@@ -279,17 +511,29 @@ export const Setup = () => {
         return () => (
           <FinalStep
             folder={overrideFolder ?? undefined}
-            onFinish={() => {
-              void invalidatePostSetupState();
-              setSetupProgress(defaultProgress);
-              setShouldRunSetup(false);
-            }}
+            isManual={setupMode === "manual"}
+            warnings={setupMode === "manual" ? manualWarnings : undefined}
+            onFinish={handleFinish}
           />
         );
       case "error":
-        return () => <ErrorStep error={action} />;
+        return () => <ErrorStep error={action} onExit={handleExit} />;
     }
-  }, [step, action, percent, overrideFolder, invalidatePostSetupState, setShouldRunSetup]);
+  }, [
+    step,
+    action,
+    percent,
+    overrideFolder,
+    handleAutoSetup,
+    handleManualSetup,
+    manualConfig,
+    handleCompleteManual,
+    validating,
+    handleFinish,
+    handleExit,
+    setupMode,
+    manualWarnings,
+  ]);
 
   return (
     <AlertDialog open={shouldRunSetup}>
