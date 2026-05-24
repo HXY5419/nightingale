@@ -140,12 +140,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
         with:
           projectPath: ./client
           releaseId: ${{ needs.prepare.outputs.release_id }}
           releaseBody: ${{ steps.notes.outputs.body }}
           args: ${{ matrix.args }}
-          includeUpdaterJson: ${{ matrix.updater }}
+          includeUpdaterJson: false
