@@ -46,10 +46,10 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
-          # Check that version in Cargo.toml matches
-          CARGO_VERSION=$(grep '^version =' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          # Check that version in app-core/Cargo.toml matches
+          CARGO_VERSION=$(grep '^version =' app-core/Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
           if [ "$CARGO_VERSION" != "$VERSION" ]; then
-            echo "Cargo.toml version ($CARGO_VERSION) does not match tag version ($VERSION)"
+            echo "app-core/Cargo.toml version ($CARGO_VERSION) does not match desired version ($VERSION)"
             exit 1
           fi
           echo "Version verified: $VERSION"
