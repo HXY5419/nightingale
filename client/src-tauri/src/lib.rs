@@ -30,7 +30,10 @@ use scanner::{
     set_library_source, trigger_scan,
 };
 use tauri::{Manager, RunEvent, WebviewWindowBuilder};
-use vendor::{is_ready, trigger_setup};
+use vendor::{
+    complete_manual_setup_command, get_manual_config, is_manual_mode, is_ready,
+    save_manual_config_command, trigger_setup, validate_manual_setup_command,
+};
 
 #[tauri::command]
 fn get_media_endpoint() -> app_core::MediaEndpoint {
@@ -140,7 +143,12 @@ pub fn run() {
             stop_mic_capture,
             // Vendor
             is_ready,
-            trigger_setup
+            trigger_setup,
+            get_manual_config,
+            save_manual_config_command,
+            is_manual_mode,
+            validate_manual_setup_command,
+            complete_manual_setup_command
         ])
         .setup(|app| {
             let _ = dotenvy::dotenv();
