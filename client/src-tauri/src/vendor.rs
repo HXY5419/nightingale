@@ -46,7 +46,7 @@ pub fn is_ready() -> bool {
 }
 
 #[tauri::command]
-pub fn skip_setup(app: AppHandle, ffmpeg_path: Option<String>, python_path: Option<String>) {
+pub fn skip_setup(app: AppHandle, ffmpeg_path: Option<String>, python_path: Option<String>) -> Result<(), String> {
     std::thread::spawn(move || {
         let user_ffmpeg = ffmpeg_path.map(std::path::PathBuf::from);
         let user_python = python_path.map(std::path::PathBuf::from);
@@ -64,4 +64,5 @@ pub fn skip_setup(app: AppHandle, ffmpeg_path: Option<String>, python_path: Opti
             },
         );
     });
+    Ok(())
 }

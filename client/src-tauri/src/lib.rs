@@ -30,7 +30,7 @@ use scanner::{
     set_library_source, trigger_scan,
 };
 use tauri::{Manager, RunEvent, WebviewWindowBuilder};
-use vendor::{is_ready, trigger_setup};
+use vendor::{is_ready, skip_setup, trigger_setup};
 
 #[tauri::command]
 fn get_media_endpoint() -> app_core::MediaEndpoint {
