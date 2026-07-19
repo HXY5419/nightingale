@@ -30,7 +30,7 @@
   },
   "bundle": {
     "active": true,
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": false,
     "targets": "all",
     "shortDescription": "Nightingale — Karaoke from your music library.",
     "longDescription": "Nightingale — Karaoke from your music library. Synchronized lyrics, immersive backgrounds, and fullscreen playback for your own tracks. Licensed under the GNU General Public License v3.",
