@@ -1,0 +1,199 @@
+---
+const cards = [
+  {
+    id: "patreon",
+    title: "Patreon",
+    subtitle: "Recurring monthly support",
+    desc: "Back the project every month. Helps cover hosting, hardware for testing, and ongoing development.",
+    href: "https://www.patreon.com/cw/nightingalekaraoke",
+    cta: "Support on Patreon",
+  },
+  {
+    id: "kofi",
+    title: "Ko-fi",
+    subtitle: "One-off tip",
+    desc: "Drop a one-time tip the size of a coffee. No account required.",
+    href: "https://ko-fi.com/nightingalekaraoke",
+    cta: "Buy a coffee",
+  },
+];
+---
+
+<section class="donate" id="donate">
+  <div class="container">
+    <h2>Support Nightingale</h2>
+    <p class="donate-desc">
+      Nightingale is open-source, free, and built by one person in their spare time.
+      If it brings you joy, consider chipping in — recurring on Patreon or one-off on Ko-fi.
+    </p>
+    <div class="donate-cards">
+      {
+        cards.map((c) => (
+          <a
+            class={`donate-card donate-card-${c.id}`}
+            href={c.href}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <div class="donate-card-head">
+              <span class="donate-card-title">{c.title}</span>
+              <span class="donate-card-subtitle">{c.subtitle}</span>
+            </div>
+            <p class="donate-card-desc">{c.desc}</p>
+            <span class="donate-card-cta">
+              {c.cta}
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </span>
+          </a>
+        ))
+      }
+    </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .donate {
+    text-align: center;
+  }
+
+  .donate-panel {
+    position: relative;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    background: var(--grad-brand-soft);
+    padding: 48px 32px;
+    overflow: hidden;
+  }
+
+  .donate-panel::before {
+    content: "";
+    position: absolute;
+    top: -60%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 120%;
+    background: var(--grad-brand);
+    filter: blur(120px);
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  h2 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 700;
+    margin: 14px 0 10px;
+    color: var(--text-primary);
+  }
+
+  .donate-desc {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0 auto 28px;
+    max-width: 580px;
+    position: relative;
+  }
+
+  .donate-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .donate-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(10, 10, 18, 0.55);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    color: var(--text-primary);
+    transition:
+      background 0.2s,
+      border-color 0.2s,
+      transform 0.2s;
+  }
+
+  .donate-card:hover {
+    color: var(--text-primary);
+    background: rgba(10, 10, 18, 0.75);
+    transform: translateY(-3px);
+  }
+
+  .donate-card-patreon:hover {
+    border-color: rgba(255, 66, 77, 0.5);
+  }
+
+  .donate-card-kofi:hover {
+    border-color: rgba(255, 94, 91, 0.5);
+  }
+
+  .donate-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .donate-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .donate-card-subtitle {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  .donate-card-desc {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  .donate-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin-top: auto;
+  }
+
+  .donate-card-patreon .donate-card-cta {
+    color: rgb(255, 102, 112);
+  }
+
+  .donate-card-kofi .donate-card-cta {
+    color: rgb(255, 124, 121);
+  }
+
+  .donate-card-cta svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  @media (max-width: 640px) {
+    .donate-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

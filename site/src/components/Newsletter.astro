@@ -1,0 +1,168 @@
+---
+---
+
+<section class="newsletter" id="newsletter">
+  <div class="container">
+    <span class="eyebrow">Newsletter</span>
+    <h2 class="newsletter-title">Stay in the loop</h2>
+    <p class="newsletter-desc">
+      Get notified about new releases and updates. No spam, unsubscribe anytime.
+    </p>
+    <form id="newsletter-form" class="newsletter-form">
+      <input
+        type="email"
+        name="email"
+        placeholder="your@email.com"
+        required
+        autocomplete="email"
+        class="newsletter-input"
+      />
+      <button type="submit" class="newsletter-btn">Subscribe</button>
+    </form>
+    <p id="newsletter-msg" class="newsletter-msg" aria-live="polite"></p>
+  </div>
+</section>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFzlGg_WUgvm8OcFAZQZtHQ6CXokE3vqBQwlboT2Rt1QftuF5_NryI_Jk-JSY3HIFjEw/exec";
+
+  const form = document.getElementById("newsletter-form") as HTMLFormElement;
+  const msg = document.getElementById("newsletter-msg")!;
+  const btn = form.querySelector("button")!;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = new FormData(form).get("email") as string;
+    if (!email) return;
+
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    msg.textContent = "";
+    msg.className = "newsletter-msg";
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `email=${encodeURIComponent(email)}`,
+      });
+
+      if (res.ok) {
+        msg.textContent = "You're in! We'll keep you posted.";
+        msg.classList.add("success");
+        form.reset();
+      } else {
+        throw new Error("request failed");
+      }
+    } catch {
+      msg.textContent = "Something went wrong. Please try again.";
+      msg.classList.add("error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Subscribe";
+    }
+  });
+</script>
+
+<style>
+  .newsletter {
+    padding: 80px 0;
+    text-align: center;
+  }
+
+  .newsletter-title {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 700;
+    margin: 14px 0 10px;
+    color: var(--text-primary);
+  }
+
+  .newsletter-desc {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 28px;
+  }
+
+  .newsletter-form {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .newsletter-input {
+    flex: 1;
+    padding: 12px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.92rem;
+    font-family: var(--font-body);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .newsletter-input::placeholder {
+    color: var(--text-dim);
+  }
+
+  .newsletter-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(74, 107, 247, 0.18);
+  }
+
+  .newsletter-btn {
+    padding: 12px 26px;
+    border-radius: 999px;
+    border: none;
+    background: var(--grad-brand);
+    color: #0a0a12;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: transform 0.18s, filter 0.18s;
+    white-space: nowrap;
+  }
+
+  .newsletter-btn:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+  }
+
+  .newsletter-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .newsletter-msg {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    min-height: 1.2em;
+  }
+
+  .newsletter-msg.success {
+    color: var(--badge-ready);
+  }
+
+  .newsletter-msg.error {
+    color: #f87171;
+  }
+
+  @media (max-width: 768px) {
+    .newsletter {
+      padding: 48px 0;
+    }
+
+    .newsletter-form {
+      flex-direction: column;
+    }
+
+    .newsletter-btn {
+      width: 100%;
+    }
+  }
+</style>

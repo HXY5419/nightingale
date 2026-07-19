@@ -1,0 +1,309 @@
+---
+const groups = [
+  {
+    heading: "Library & sources",
+    description:
+      "Pick where Nightingale reads your music from — a local folder, or a Jellyfin or Navidrome server. Run it as the desktop app, or self-host the web build so any device in the house can open it.",
+    items: [
+      {
+        icon: "📁",
+        title: "Folder library",
+        description:
+          "Point at any folder and Nightingale scans the supported audio, video, and UltraStar files inside.",
+      },
+      {
+        icon: "🎬",
+        title: "Jellyfin",
+        description:
+          "Play straight from your Jellyfin library. Songs cache locally on first play so karaoke runs the same as a folder library.",
+      },
+      {
+        icon: "💿",
+        title: "Navidrome",
+        description:
+          "Same idea for Navidrome (audio only). Login details are kept encrypted on disk.",
+      },
+      {
+        icon: "🌐",
+        title: "Self-hosted web mode",
+        description:
+          "Run Nightingale on a Linux box on your home network. Open it from any browser at <hostname>.local — one install script handles the rest.",
+      },
+      {
+        icon: "🧭",
+        title: "Sidebar filters",
+        description:
+          "Browse by quick filters, metadata buckets, artists, and albums. Analyze All and optional auto-analysis help queue your library faster.",
+      },
+      {
+        icon: "🗂️",
+        title: "Flexible storage",
+        description:
+          "Choose a main data folder, then split cache, models, videos, and vendor tools into separate folders from Settings.",
+      },
+      {
+        icon: "📦",
+        title: "Single binary",
+        description:
+          "ffmpeg, Python, PyTorch, and the ML models are all bootstrapped on first launch. Nothing to install.",
+      },
+    ],
+  },
+  {
+    heading: "Lyrics & audio",
+    description:
+      "Word-level lyrics, multi-language ASR, CJK forced alignment, and an in-app editor for when the automatic result needs a human pass.",
+    items: [
+      {
+        icon: "🎤",
+        title: "Stem separation",
+        description:
+          "Vocals are isolated from instrumentals using the UVR Karaoke model or Demucs. Guide vocal volume is adjustable.",
+      },
+      {
+        icon: "📝",
+        title: "Word-level lyrics",
+        description:
+          "WhisperX transcribes and aligns every word to the audio. Existing lyrics from LRCLIB are used when available.",
+      },
+      {
+        icon: "🈯",
+        title: "CJK lyrics",
+        description:
+          "Japanese, Chinese, Cantonese, and Korean songs get per-character forced alignment with romanized readings (Hepburn, pinyin, Jyutping, Revised Romanization) shown above each token.",
+      },
+      {
+        icon: "🗣️",
+        title: "Pluggable ASR",
+        description:
+          "Choose Whisper (default, broad coverage) or Parakeet v3 (experimental) for ~25 European languages. NeMo on CUDA, ONNX everywhere else.",
+      },
+      {
+        icon: "🎼",
+        title: "UltraStar songs",
+        description:
+          "Drop USDX song folders into your library — pitch and lyrics come straight from the file, no analyzer pass needed. Experimental.",
+      },
+      {
+        icon: "✏️",
+        title: "Lyrics editor",
+        description:
+          "Use an analyzed non-USDX song's Actions button to edit its lyrics. When LRCLIB has multiple matches, a second tab lets you carousel through them and apply one with a click. Saving re-runs alignment.",
+      },
+    ],
+  },
+  {
+    heading: "Playback & visuals",
+    description:
+      "Pitch scoring, mic latency calibration, key/tempo controls, lyrics placement, and 10 audio-reactive shader backgrounds plus video flavors.",
+    items: [
+      {
+        icon: "🎯",
+        title: "Pitch scoring",
+        description:
+          "Sing into your mic and get scored in real-time. Star ratings and per-song scoreboards track your progress.",
+      },
+      {
+        icon: "🎚️",
+        title: "Key and tempo shifts",
+        description:
+          "After analysis, adjust key and tempo from the song list to match your voice and comfort level.",
+      },
+      {
+        icon: "🎬",
+        title: "Video file support",
+        description:
+          "Drop .mp4 or .mkv files into your library. Vocals are separated and the original video plays as the background.",
+      },
+      {
+        icon: "🌌",
+        title: "Audio-reactive backgrounds",
+        description:
+          "10 GPU shaders that react to your mic input in real time, 5 Pixabay video flavors, plus the source video for video files.",
+      },
+      {
+        icon: "🎙️",
+        title: "Mic monitoring + latency",
+        description:
+          "Optional live mic monitor, adjustable gain (0–200%), and a beep-based latency test for tighter scoring.",
+      },
+    ],
+  },
+  {
+    heading: "Quality of life",
+    description:
+      "Per-player profiles, full gamepad navigation, touch playback controls, and signed in-app updates on macOS and Windows.",
+    items: [
+      {
+        icon: "👤",
+        title: "Player profiles",
+        description:
+          "Multiple profiles with separate score histories. Switch between singers without losing anyone's records.",
+      },
+      {
+        icon: "🎮",
+        title: "Gamepad + touch support",
+        description:
+          "Navigate menus with a controller and use on-screen playback controls on touch devices.",
+      },
+      {
+        icon: "⬆️",
+        title: "In-app updates",
+        description:
+          "On macOS and Windows: auto-checks at launch, badges the sidebar avatar when a release is available, and installs signed updates with one click. On Linux the Update entry opens GitHub Releases for a manual download.",
+      },
+    ],
+  },
+];
+---
+
+<section id="features">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Everything included</span>
+        <h2 class="section-title">Built for the whole set list</h2>
+        <p class="section-sub">
+          From where your music lives to how it sounds on the mic — every step
+          of the karaoke pipeline is handled in one app.
+        </p>
+      </div>
+      <a href="/docs/" class="docs-link">
+        Explore docs
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+
+    <div class="groups">
+      {
+        groups.map((group) => (
+          <div class="group">
+            <div class="group-header">
+              <h3 class="group-title">{group.heading}</h3>
+              <p class="group-desc">{group.description}</p>
+            </div>
+            <div class="features-grid">
+              {group.items.map((f) => (
+                <div class="feature-card">
+                  <h4>
+                    <span class="icon">{f.icon}</span> {f.title}
+                  </h4>
+                  <p>{f.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .groups {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .group-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .group-title {
+    display: inline-block;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+    background: var(--grad-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .group-desc {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 760px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .feature-card {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 24px 22px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease,
+      background 0.25s ease;
+  }
+
+  .feature-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--grad-brand);
+    -webkit-mask: linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    background: var(--surface-hover);
+  }
+
+  .feature-card:hover::before {
+    opacity: 0.55;
+  }
+
+  .feature-card h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    font-size: 1.15rem;
+    line-height: 1;
+    flex-shrink: 0;
+    background: var(--grad-brand-soft);
+    border: 1px solid var(--border);
+  }
+
+  .feature-card p {
+    font-size: 0.87rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+
+</style>

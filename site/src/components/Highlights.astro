@@ -1,0 +1,169 @@
+---
+const flagship = [
+  {
+    title: "Run it in Docker",
+    description:
+      "Host Nightingale for your whole home with a single container. Point it at your music folder and open it from any phone, tablet, or laptop on your network, with optional GPU speed-ups.",
+  },
+  {
+    title: "Sing in Cantonese",
+    description:
+      "Cantonese joins Japanese, Mandarin, and Korean with full lyric support and romanized readings shown above each word, so you can follow along even if you don't read the characters.",
+  },
+  {
+    title: "Sharper lyric timing",
+    description:
+      "New alignment options make the words light up more accurately in time with the music, and they're noticeably faster on modern graphics cards and Apple Silicon.",
+  },
+];
+
+const alsoNew = [
+  {
+    title: "Cleaner vocal detection",
+    description:
+      "A new sensitivity slider keeps quiet intros and soft singing from getting cut off.",
+  },
+  {
+    title: "Easier-to-read settings",
+    description:
+      "Analysis options now explain in plain language what each choice actually does.",
+  },
+  {
+    title: "Smoother lyrics",
+    description:
+      "Finished lines stay on screen until the next one begins, instead of blinking away the moment they end.",
+  },
+];
+---
+
+<section id="highlights">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Latest release</span>
+        <h2 class="section-title">What&apos;s new in v0.9</h2>
+      </div>
+      <a href="/docs/" class="docs-link">
+        See full docs
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+
+    <div class="flagship-row">
+      {
+        flagship.map((item) => (
+          <article class="highlight-card flagship">
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+          </article>
+        ))
+      }
+    </div>
+
+    <div class="dense-row">
+      {
+        alsoNew.map((item) => (
+          <article class="highlight-card dense">
+            <h4>{item.title}</h4>
+            <p>{item.description}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .flagship-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .dense-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .highlight-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    transition: transform 0.25s ease, border-color 0.25s ease,
+      background 0.25s ease;
+  }
+
+  .highlight-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
+    background: var(--surface-hover);
+  }
+
+  .highlight-card.flagship {
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .highlight-card.flagship::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      #4a6bf7 22%,
+      #6d8bff 50%,
+      #59c0e8 78%,
+      transparent 100%
+    );
+    opacity: 0.85;
+  }
+
+  .highlight-card.dense {
+    padding: 16px 18px;
+  }
+
+  .highlight-card h3 {
+    margin: 0 0 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .highlight-card h4 {
+    margin: 0 0 6px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .highlight-card.flagship p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  .highlight-card.dense p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 720px) {
+    .flagship-row {
+      grid-template-columns: 1fr;
+    }
+
+    .dense-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
